@@ -1,0 +1,95 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sre-task-alerts
+  namespace: monitoring
+  labels:
+    app: sre-task
+    managed-by: gitops
+spec:
+  groups:
+  - name: sre-task.application.rules
+    rules:
+    - alert: HighErrorRate
+      expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+        component: application
+      annotations:
+        summary: "High error rate detected"
+        description: "Service {{ $labels.service }} has error rate above 10% for 5 minutes"
+    
+    - alert: HighLatency
+      expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+      for: 5m
+      labels:
+        severity: warning
+        component: application
+      annotations:
+        summary: "High latency detected"
+        description: "Service {{ $labels.service }} has 95th percentile latency above 1 second"
+    
+    - alert: ServiceDown
+      expr: up == 0
+      for: 2m
+      labels:
+        severity: critical
+        component: application
+      annotations:
+        summary: "Service is down"
+        description: "Service {{ $labels.instance }} is down for more than 2 minutes"
+
+  - name: sre-task.infrastructure.rules
+    rules:
+    - alert: PodCrashLooping
+      expr: rate(kube_pod_container_status_restarts_total[10m]) > 0
+      for: 5m
+      labels:
+        severity: critical
+        component: infrastructure
+      annotations:
+        summary: "Pod is crash looping"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is restarting frequently"
+    
+    - alert: HighMemoryUsage
+      expr: (container_memory_usage_bytes{container!=""} / container_spec_memory_limit_bytes) > 0.8
+      for: 10m
+      labels:
+        severity: warning
+        component: infrastructure
+      annotations:
+        summary: "High memory usage"
+        description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is using more than 80% of memory"
+    
+    - alert: HighCPUUsage
+      expr: rate(container_cpu_usage_seconds_total{container!=""}[5m]) > 0.8
+      for: 10m
+      labels:
+        severity: warning
+        component: infrastructure
+      annotations:
+        summary: "High CPU usage"
+        description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is using more than 80% of CPU"
+
+  - name: sre-task.node.rules
+    rules:
+    - alert: NodeMemoryUsage
+      expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.8
+      for: 10m
+      labels:
+        severity: warning
+        component: node
+      annotations:
+        summary: "High node memory usage"
+        description: "Node {{ $labels.instance }} has memory usage above 80%"
+    
+    - alert: NodeDiskUsage
+      expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes)) > 0.8
+      for: 10m
+      labels:
+        severity: warning
+        component: node
+      annotations:
+        summary: "High node disk usage"
+        description: "Node {{ $labels.instance }} has disk usage above 80% on {{ $labels.mountpoint }}"

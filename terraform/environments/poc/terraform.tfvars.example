@@ -1,0 +1,70 @@
+# SRE Assignment Configuration Template
+# Copy this file to terraform.tfvars and update the required values
+
+# ==================================================
+# REQUIRED: Update these values before deployment
+# ==================================================
+
+# Your AWS region
+aws_region = "eu-central-1"  # Change to your preferred region
+
+# Your email address for notifications
+budget_notification_email = "your-email@company.com"  # REQUIRED: Change this
+letsencrypt_email         = "your-email@company.com"  # REQUIRED: Change this
+
+# Project configuration
+project_name = "sre-task"
+environment  = "poc"
+
+# ==================================================
+# NETWORK CONFIGURATION (Optional - defaults work)
+# ==================================================
+
+vpc_cidr              = "10.93.0.0/16"
+private_subnet_cidrs  = ["10.93.1.0/24", "10.93.2.0/24", "10.93.3.0/24"]
+public_subnet_cidrs   = ["10.93.101.0/24", "10.93.102.0/24", "10.93.103.0/24"]
+database_subnet_cidrs = ["10.93.201.0/24", "10.93.202.0/24", "10.93.203.0/24"]
+
+# ==================================================
+# COST OPTIMIZATION (Adjust for your budget)
+# ==================================================
+
+# Budget limit
+monthly_budget_limit = 100
+
+# Node configuration (cost-optimized)
+node_group_instance_types = ["t3.medium"]
+node_group_desired       = 2
+node_group_max_size      = 4
+node_group_min_size      = 1
+enable_spot_instances    = true
+
+# Database (minimal for POC)
+db_instance_class           = "db.t3.micro"
+db_allocated_storage       = 20
+db_backup_retention = 7
+db_multi_az                = false
+
+# Network cost optimization
+enable_nat_gateway = true
+single_nat_gateway = true
+
+# ==================================================
+# OPTIONAL CUSTOMIZATIONS
+# ==================================================
+
+# Tags for your organization
+additional_tags = {
+  Department = "Engineering"
+  Team       = "DevOps"
+  Contact    = "your-email@company.com"  # REQUIRED: Change this
+  Purpose    = "SRE Assignment POC"
+}
+
+cost_center = "engineering"
+owner       = "devops-team"
+
+# TLS configuration
+enable_tls      = true
+use_letsencrypt = false  # Set to true if you have a real domain
+frontend_domain = ""     # Set your domain if using Let's Encrypt

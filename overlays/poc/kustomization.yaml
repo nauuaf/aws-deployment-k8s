@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../manifests/api-service
+- ../../manifests/auth-service
+- ../../manifests/image-service
+- ../../manifests/frontend
+- ../../manifests/hpa
+- ../../manifests/resource-quotas
+- ../../manifests/rbac
+
+labels:
+- pairs:
+    environment: poc
+    managed-by: gitops
+
+namespace: ""  # Let each manifest define its own namespace
+
+# Images are handled by placeholder replacement in update-manifests.sh
+# No kustomize image transformation needed since we use template processing

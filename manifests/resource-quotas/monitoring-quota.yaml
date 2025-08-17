@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: monitoring-quota
+  namespace: monitoring
+  labels:
+    component: monitoring
+spec:
+  hard:
+    # Compute Resources - Removed mandatory CPU/memory requirements
+    # to allow system components without resource specs
+    # requests.cpu: "1"
+    # requests.memory: "4Gi"
+    # limits.cpu: "2"  
+    # limits.memory: "8Gi"
+    
+    # Storage
+    requests.storage: "100Gi"
+    persistentvolumeclaims: "10"
+    
+    # Object Counts
+    pods: "15"
+    replicationcontrollers: "5"
+    services: "10"
+    secrets: "20"
+    configmaps: "10"
+    
+    # Extended Resources
+    count/deployments.apps: "10"
+    count/replicasets.apps: "15"
+    count/statefulsets.apps: "5"
+    count/jobs.batch: "5"
+    count/cronjobs.batch: "3"

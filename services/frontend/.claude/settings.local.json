@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(kubectl get:*)",
+      "Bash(aws ec2 describe-vpcs:*)",
+      "Bash(./scripts/verify-deployment.sh:*)",
+      "Bash(aws rds describe-db-instances:*)",
+      "Bash(aws ecr list-images:*)",
+      "Bash(command -v:*)",
+      "Bash(aws ecr describe-repositories:*)",
+      "Bash(docker buildx build:*)",
+      "Bash(kubectl describe:*)",
+      "Bash(grep:*)",
+      "Bash(kubectl apply:*)",
+      "WebFetch(domain:a207cdfb4726a498a8a15880fe4c0774-2023481631.eu-central-1.elb.amazonaws.com)",
+      "Bash(curl:*)",
+      "Bash(kubectl exec:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(kubectl rollout status:*)",
+      "Bash(kubectl rollout restart:*)",
+      "Bash(kubectl wait:*)",
+      "Bash(helm list:*)",
+      "Bash(helm status:*)",
+      "Bash(helm uninstall:*)",
+      "Bash(kubectl delete:*)",
+      "Bash(find:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

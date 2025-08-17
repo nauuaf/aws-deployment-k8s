@@ -1,0 +1,104 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sre-task-ingress
+  namespace: frontend
+  annotations:
+    cert-manager.io/cluster-issuer: "selfsigned-issuer"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - sre-task.local
+    secretName: frontend-tls-secret
+  rules:
+  - host: sre-task.local
+    http:
+      paths:
+      # Frontend API playground route - MUST come before /api
+      - path: /api/playground
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
+      # Frontend health route - MUST come before /api
+      - path: /api/health
+        pathType: Exact
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
+      # API Gateway routes - general API calls (after specific frontend routes)
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 3000
+      # Frontend routes - serve static content and SPA
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
+  # Default rule for load balancer direct access
+  - http:
+      paths:
+      # Frontend API playground route - MUST come before /api
+      - path: /api/playground
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
+      # Frontend health route - MUST come before /api
+      - path: /api/health
+        pathType: Exact
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
+      # API Gateway routes - general API calls (after specific frontend routes)
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 3000
+      # Frontend routes - serve static content and SPA
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
+
+# ExternalName service to access API service from frontend namespace
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: frontend
+  labels:
+    app: api-service
+    component: backend
+    managed-by: gitops
+spec:
+  type: ExternalName
+  externalName: api-service.backend.svc.cluster.local
+  ports:
+  - port: 3000
+    targetPort: 3000
+    name: http

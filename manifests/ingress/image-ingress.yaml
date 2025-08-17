@@ -1,0 +1,58 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: image-ingress
+  namespace: frontend
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    cert-manager.io/cluster-issuer: "selfsigned-issuer"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - sre-task.local
+    secretName: image-tls-secret
+  rules:
+  - host: sre-task.local
+    http:
+      paths:
+      # Image service routes with path rewriting
+      - path: /api/v1/images(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: image-service
+            port:
+              number: 5000
+  # Default rule for load balancer direct access
+  - http:
+      paths:
+      # Image service routes with path rewriting
+      - path: /api/v1/images(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: image-service
+            port:
+              number: 5000
+
+---
+# ExternalName service for image service
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-service
+  namespace: frontend
+  labels:
+    app: image-service
+    component: backend
+    managed-by: gitops
+spec:
+  type: ExternalName
+  externalName: image-service.backend.svc.cluster.local
+  ports:
+  - port: 5000
+    targetPort: 5000
+    name: http

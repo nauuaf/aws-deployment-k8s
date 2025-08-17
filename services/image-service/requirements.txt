@@ -1,0 +1,49 @@
+# Core dependencies
+fastapi==0.103.1
+uvicorn[standard]==0.23.2
+pydantic==2.4.2
+pydantic-settings==2.0.3
+
+# Image processing
+Pillow==10.0.1
+opencv-python-headless==4.8.1.78
+
+# HTTP and async
+httpx==0.25.0
+aiofiles==23.2.1
+
+# Database
+asyncpg==0.28.0
+databases[postgresql]==0.8.0
+
+# AWS SDK
+boto3==1.29.7
+botocore==1.32.7
+
+# Authentication
+PyJWT==2.8.0
+python-multipart==0.0.6
+
+# Monitoring and logging
+prometheus-client==0.17.1
+structlog==23.1.0
+
+# Validation and utilities
+email-validator==2.0.0
+python-magic==0.4.27
+redis==5.0.1
+
+# Development and testing
+pytest==7.4.2
+pytest-asyncio==0.21.1
+black==23.9.1
+flake8==6.1.0
+mypy==1.6.0
+
+# Environment management
+python-dotenv==1.0.0
+
+# Date and time utilities
+python-dateutil==2.8.2
+
+# UUID utilities (using built-in uuid module)

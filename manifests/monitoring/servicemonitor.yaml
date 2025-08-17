@@ -1,0 +1,44 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sre-task-backend-services
+  namespace: monitoring
+  labels:
+    app: sre-task
+    component: backend
+    managed-by: gitops
+spec:
+  selector:
+    matchLabels:
+      component: backend
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+    - backend
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sre-task-frontend-services
+  namespace: monitoring
+  labels:
+    app: sre-task
+    component: frontend
+    managed-by: gitops
+spec:
+  selector:
+    matchLabels:
+      component: frontend
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+    - frontend

@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: frontend-quota
+  namespace: frontend
+  labels:
+    component: frontend
+spec:
+  hard:
+    # Compute Resources
+    requests.cpu: "1"
+    requests.memory: "2Gi"
+    limits.cpu: "2"
+    limits.memory: "4Gi"
+    
+    # Storage
+    requests.storage: "20Gi"
+    persistentvolumeclaims: "5"
+    
+    # Object Counts
+    pods: "10"
+    replicationcontrollers: "5"
+    services: "5"
+    secrets: "5"
+    configmaps: "5"
+    
+    # Extended Resources
+    count/deployments.apps: "5"
+    count/replicasets.apps: "10"
+    count/statefulsets.apps: "2"
+    count/jobs.batch: "5"
+    count/cronjobs.batch: "2"

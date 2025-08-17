@@ -1,0 +1,58 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: auth-ingress
+  namespace: frontend
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    cert-manager.io/cluster-issuer: "selfsigned-issuer"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - sre-task.local
+    secretName: auth-tls-secret
+  rules:
+  - host: sre-task.local
+    http:
+      paths:
+      # Auth service routes with path rewriting
+      - path: /api/v1/auth(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 8080
+  # Default rule for load balancer direct access
+  - http:
+      paths:
+      # Auth service routes with path rewriting
+      - path: /api/v1/auth(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 8080
+
+---
+# ExternalName service for auth service
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: frontend
+  labels:
+    app: auth-service
+    component: backend
+    managed-by: gitops
+spec:
+  type: ExternalName
+  externalName: auth-service.backend.svc.cluster.local
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http

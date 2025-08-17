@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - api-service-hpa.yaml
+  - auth-service-hpa.yaml
+  - image-service-hpa.yaml
+  - frontend-hpa.yaml
+
+commonLabels:
+  managed-by: kustomize
+  environment: poc
