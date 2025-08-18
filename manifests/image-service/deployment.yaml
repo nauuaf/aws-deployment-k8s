@@ -24,7 +24,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: image-service
-        image: 503561446285.dkr.ecr.eu-central-1.amazonaws.com/sre-task/image-service:v7
+        image: 503561446285.dkr.ecr.eu-central-1.amazonaws.com/sre-task/image-service:v24
         ports:
         - containerPort: 5000
           name: http

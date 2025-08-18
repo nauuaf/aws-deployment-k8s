@@ -41,7 +41,7 @@ class Settings(BaseModel):
             self.db_password = os.getenv('DB_PASSWORD', '')
     
     # Auth service settings
-    auth_service_url: str = os.getenv('AUTH_SERVICE_URL', 'http://sre-assignment-poc-auth:8080')
+    auth_service_url: str = os.getenv('AUTH_SERVICE_URL', 'http://auth-service.backend.svc.cluster.local:8080/api/v1/auth')
     
     # Image processing settings
     max_file_size_mb: int = int(os.getenv('MAX_FILE_SIZE_MB', '10'))

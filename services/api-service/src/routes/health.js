@@ -50,16 +50,29 @@ const imageServiceUrl = process.env.IMAGE_SERVICE_URL || 'http://image-service:5
  *                   example: "1.0.0"
  */
 router.get('/', (req, res) => {
-  const healthCheck = {
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    version: process.env.npm_package_version || '1.0.0',
-    service: 'api-service',
-    environment: process.env.NODE_ENV || 'development'
-  };
+  try {
+    const healthCheck = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: process.env.npm_package_version || '1.0.0',
+      service: 'api-service',
+      environment: process.env.NODE_ENV || 'development',
+      memory: {
+        heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), // MB
+        heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) // MB
+      }
+    };
 
-  res.status(StatusCodes.OK).json(healthCheck);
+    res.status(StatusCodes.OK).json(healthCheck);
+  } catch (error) {
+    res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: error.message,
+      service: 'api-service'
+    });
+  }
 });
 
 /**

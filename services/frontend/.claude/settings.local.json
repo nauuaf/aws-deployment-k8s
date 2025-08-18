@@ -23,7 +23,13 @@
       "Bash(helm status:*)",
       "Bash(helm uninstall:*)",
       "Bash(kubectl delete:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm run build:*)",
+      "Bash(cp:*)",
+      "Bash(docker build:*)",
+      "Bash(docker tag:*)",
+      "Bash(docker push:*)",
+      "Bash(kubectl set image:*)"
     ],
     "deny": [],
     "ask": []

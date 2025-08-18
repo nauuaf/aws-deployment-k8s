@@ -131,6 +131,15 @@ func main() {
 	// API routes
 	v1 := router.Group("/api/v1")
 	{
+		// Simple auth health endpoint (what frontend expects)
+		v1.GET("/auth/health", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"status":    "healthy",
+				"service":   "auth-service",
+				"timestamp": time.Now().UTC(),
+			})
+		})
+		
 		v1.POST("/register", authHandler.Register)
 		v1.POST("/login", authHandler.Login)
 		v1.POST("/refresh", authHandler.RefreshToken)

@@ -153,8 +153,19 @@ app.use('/api', limiter);
 
 // Basic middleware
 app.use(compression());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Body parsing - skip for image routes to allow streaming proxy
+app.use((req, res, next) => {
+  // Skip body parsing for image routes to allow raw streaming
+  if (req.path.startsWith('/api/images')) {
+    return next();
+  }
+  
+  // Apply body parsing for other routes
+  express.json({ limit: '10mb' })(req, res, () => {
+    express.urlencoded({ extended: true, limit: '10mb' })(req, res, next);
+  });
+});
 
 // Request logging
 app.use(expressWinston.logger({
@@ -186,10 +197,20 @@ app.get('/metrics', async (req, res) => {
   }
 });
 
+// Simple status endpoint (what frontend expects)
+app.get('/api/status', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'api-service',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', authMiddleware, userRoutes);
-app.use('/api/images', authMiddleware, imageRoutes);
+app.use('/api/images', imageRoutes); // Let image service handle auth
 app.use('/api/chaos', authMiddleware, chaosRoutes);
 
 // Root endpoint

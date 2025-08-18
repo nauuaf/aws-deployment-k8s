@@ -22,7 +22,8 @@ import {
   EyeOff,
   RefreshCw,
   Download,
-  Zap
+  Zap,
+  Image as ImageIcon
 } from 'lucide-react';
 
 interface APIEndpoint {
@@ -65,9 +66,12 @@ export default function APIPlaygroundPage() {
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('authToken') || localStorage.getItem('auth_token');
       if (token && !authToken) {
-        setAuthToken(token);
+        // Validate token format (should have 3 parts separated by dots)
+        if (token.split('.').length === 3) {
+          setAuthToken(token);
+        }
       }
-      return token !== null;
+      return token !== null && token.trim() !== '' && token.split('.').length === 3;
     }
     return false;
   };
@@ -90,7 +94,7 @@ export default function APIPlaygroundPage() {
   }, []);
 
   const endpoints: APIEndpoint[] = [
-    // API Service Endpoints
+    // Health Check Endpoints
     {
       id: 'api-health',
       name: 'فحص حالة API',
@@ -102,42 +106,49 @@ export default function APIPlaygroundPage() {
       icon: Server,
     },
     {
-      id: 'api-users',
-      name: 'قائمة المستخدمين',
-      method: 'GET',
-      url: '/api/users',
-      description: 'الحصول على قائمة بجميع المستخدمين',
-      service: 'api',
-      requiresAuth: true,
-      icon: User,
-    },
-    {
-      id: 'api-user-create',
-      name: 'إنشاء مستخدم',
-      method: 'POST',
-      url: '/api/users',
-      description: 'إنشاء مستخدم جديد في النظام',
-      service: 'api',
-      requiresAuth: true,
-      icon: User,
-      body: {
-        name: 'Ahmed Al-Rashid',
-        email: 'ahmed@example.com',
-        role: 'user'
-      },
-    },
-    
-    // Auth Service Endpoints (via API Gateway)
-    {
       id: 'auth-health',
       name: 'فحص حالة المصادقة',
       method: 'GET',
-      url: '/api/auth/health',
-      description: 'فحص حالة خدمة المصادقة عبر API Gateway',
+      url: '/api/v1/auth/health',
+      description: 'فحص حالة خدمة المصادقة',
       service: 'auth',
       requiresAuth: false,
       icon: Shield,
     },
+    {
+      id: 'image-health',
+      name: 'فحص حالة خدمة الصور',
+      method: 'GET',
+      url: '/api/v1/images/health',
+      description: 'فحص حالة خدمة معالجة الصور',
+      service: 'image',
+      requiresAuth: false,
+      icon: ImageIcon,
+    },
+
+    // API Service Endpoints
+    {
+      id: 'api-users',
+      name: 'قائمة المستخدمين',
+      method: 'GET',
+      url: '/api/users',
+      description: 'الحصول على قائمة بجميع المستخدمين (يتطلب صلاحيات المسؤول)',
+      service: 'api',
+      requiresAuth: true,
+      icon: User,
+    },
+    {
+      id: 'api-user-profile',
+      name: 'الملف الشخصي للمستخدم',
+      method: 'GET',
+      url: '/api/users/profile',
+      description: 'الحصول على معلومات المستخدم الحالي',
+      service: 'api',
+      requiresAuth: true,
+      icon: User,
+    },
+    
+    // Auth Service Endpoints (via API Gateway)
     {
       id: 'auth-register',
       name: 'تسجيل حساب جديد',
@@ -148,9 +159,11 @@ export default function APIPlaygroundPage() {
       requiresAuth: false,
       icon: User,
       body: {
-        name: 'Fatima Al-Zahra',
-        email: 'fatima@example.com',
-        password: 'securepassword123'
+        firstName: 'Khalid',
+        lastName: 'Ahmed',
+        email: 'khalid@example.com',
+        password: 'Securepassword123',
+        confirmPassword: 'Securepassword123'
       },
     },
     {
@@ -167,28 +180,8 @@ export default function APIPlaygroundPage() {
         password: 'demo123'
       },
     },
-    {
-      id: 'auth-profile',
-      name: 'الملف الشخصي',
-      method: 'GET',
-      url: '/api/auth/profile',
-      description: 'الحصول على معلومات المستخدم المحدد',
-      service: 'auth',
-      requiresAuth: true,
-      icon: User,
-    },
 
     // Image Service Endpoints (via API Gateway)
-    {
-      id: 'image-health',
-      name: 'فحص حالة الصور',
-      method: 'GET', 
-      url: '/api/images/health',
-      description: 'فحص حالة خدمة معالجة الصور عبر API Gateway',
-      service: 'image',
-      requiresAuth: false,
-      icon: CloudUpload,
-    },
     {
       id: 'image-upload',
       name: 'رفع صورة',
@@ -213,13 +206,20 @@ export default function APIPlaygroundPage() {
   ];
 
   const getServiceUrl = (service: string) => {
-    // For the API playground, we want to test the actual backend services through the load balancer
-    // Since all services are accessible through the same load balancer, we use relative URLs
-    // but they should point to the backend API endpoints, not frontend routes
+    // Check if we're running on the actual deployed environment
+    if (typeof window !== 'undefined') {
+      const currentHost = window.location.hostname;
+      // If we're on the actual ELB URL, use the full paths
+      if (currentHost.includes('elb.amazonaws.com')) {
+        return '';  // Use relative paths which will work with the ELB
+      }
+    }
+    
+    // For local development, use relative URLs that proxy to backend services
     const urls = {
-      api: '',           // API gateway routes like /api/health, /api/v1/users
-      auth: '',          // Auth endpoints via API gateway like /api/v1/auth/login  
-      image: '',         // Image endpoints via API gateway like /api/v1/images/upload
+      api: '',           // API gateway routes 
+      auth: '',          // Auth endpoints via API gateway  
+      image: '',         // Image endpoints via API gateway
     };
     return urls[service as keyof typeof urls];
   };
@@ -395,30 +395,59 @@ export default function APIPlaygroundPage() {
                   </p>
                 </div>
               </div>
-              {!isAuth && (
-                <button
-                  onClick={() => router.push('/auth/login')}
-                  className="bg-saudi-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors inline-flex items-center gap-2"
-                >
-                  <Key className="h-4 w-4" />
-                  تسجيل الدخول
-                </button>
-              )}
-              {isAuth && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowToken(!showToken)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                  {showToken && (
-                    <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono max-w-32 truncate">
-                      {authToken}
-                    </code>
-                  )}
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                {!isAuth && (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="الصق JWT token هنا"
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono w-64 text-left"
+                      dir="ltr"
+                      onChange={(e) => {
+                        const token = e.target.value.trim();
+                        if (token && token.split('.').length === 3) {
+                          localStorage.setItem('authToken', token);
+                          setAuthToken(token);
+                          setIsAuth(true);
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => router.push('/auth/login')}
+                      className="bg-saudi-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors inline-flex items-center gap-2"
+                    >
+                      <Key className="h-4 w-4" />
+                      تسجيل الدخول
+                    </button>
+                  </>
+                )}
+                {isAuth && (
+                  <>
+                    <button
+                      onClick={() => setShowToken(!showToken)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                    {showToken && (
+                      <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono max-w-64 truncate text-left" dir="ltr">
+                        {authToken}
+                      </code>
+                    )}
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('authToken');
+                        localStorage.removeItem('auth_token');
+                        setAuthToken('');
+                        setIsAuth(false);
+                      }}
+                      className="bg-red-100 text-red-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
+                    >
+                      مسح Token
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -620,8 +649,8 @@ export default function APIPlaygroundPage() {
                         {/* Response Data */}
                         <div>
                           <h3 className="text-sm font-medium text-gray-700 mb-2">محتوى الاستجابة</h3>
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <pre className="text-sm text-gray-800 font-mono overflow-x-auto whitespace-pre-wrap text-left" dir="ltr">
+                          <div className="bg-gray-50 rounded-lg p-4" dir="ltr">
+                            <pre className="text-sm text-gray-800 font-mono overflow-x-auto whitespace-pre-wrap text-left">
                               {typeof testResult.data === 'object' 
                                 ? JSON.stringify(testResult.data, null, 2)
                                 : testResult.data
@@ -633,10 +662,10 @@ export default function APIPlaygroundPage() {
                         {/* Response Headers */}
                         <div>
                           <h3 className="text-sm font-medium text-gray-700 mb-2">رؤوس الاستجابة</h3>
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <div className="space-y-1 text-sm font-mono text-left" dir="ltr">
+                          <div className="bg-gray-50 rounded-lg p-4" dir="ltr">
+                            <div className="space-y-1 text-sm font-mono text-left">
                               {Object.entries(testResult.headers).map(([key, value]) => (
-                                <div key={key} dir="ltr">
+                                <div key={key} className="text-left">
                                   <span className="text-gray-600">{key}:</span> <span className="text-gray-800">{value}</span>
                                 </div>
                               ))}

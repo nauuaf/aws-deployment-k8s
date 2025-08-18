@@ -84,7 +84,7 @@ spec:
             port:
               number: 3000
 
-# ExternalName service to access API service from frontend namespace
+# ExternalName services to access backend services from frontend namespace
 ---
 apiVersion: v1
 kind: Service
@@ -101,4 +101,22 @@ spec:
   ports:
   - port: 3000
     targetPort: 3000
+    name: http
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-service
+  namespace: frontend
+  labels:
+    app: image-service
+    component: backend
+    managed-by: gitops
+spec:
+  type: ExternalName
+  externalName: image-service.backend.svc.cluster.local
+  ports:
+  - port: 5000
+    targetPort: 5000
     name: http

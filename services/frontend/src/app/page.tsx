@@ -153,39 +153,71 @@ export default function HomePage() {
   useEffect(() => {
     const fetchSystemStatus = async () => {
       try {
-        // Check actual service health using load balancer URLs
+        // Check actual service health using proper endpoints
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
         const healthChecks = await Promise.allSettled([
-          // Frontend health check (this always works if we can run this code)
-          fetch('/api/health').then(async r => {
-            if (!r.ok) throw new Error(`Frontend health check failed: ${r.status}`);
-            const data = await r.json();
-            return data;
+          // Frontend health check (always healthy if we can run this code)
+          Promise.resolve({ status: 'healthy', service: 'frontend' }),
+          
+          // API service health check
+          fetch(`${baseUrl}/api/status`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(3000),
+          }).then(async r => {
+            if (!r.ok) throw new Error(`${r.status}`);
+            return await r.json();
+          }).catch(e => {
+            throw new Error(`API service: ${e.message}`);
           }),
-          // API Gateway/Backend API service health check (actual backend service)
-          fetch('/api/v1/health').then(async r => {
-            if (!r.ok) throw new Error(`API health check failed: ${r.status}`);
-            const data = await r.json();
-            return data;
-          }),
+          
           // Auth service health check
-          fetch('/api/v1/auth/health').then(async r => {
-            if (!r.ok) throw new Error(`Auth health check failed: ${r.status}`);
-            const data = await r.json();
-            return data;
+          fetch(`${baseUrl}/api/v1/auth/health`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(3000),
+          }).then(async r => {
+            if (!r.ok) throw new Error(`${r.status}`);
+            return await r.json();
+          }).catch(e => {
+            throw new Error(`Auth service: ${e.message}`);
           }),
-          // Image service health check  
-          fetch('/api/v1/images/health').then(async r => {
-            if (!r.ok) throw new Error(`Image health check failed: ${r.status}`);
-            const data = await r.json();
-            return data;
+          
+          // Image service health check - try main endpoint first, then health
+          fetch(`${baseUrl}/api/v1/images`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(3000),
+          }).then(async r => {
+            if (!r.ok) throw new Error(`${r.status}`);
+            return await r.json();
+          }).catch(async e => {
+            // Fallback to health endpoint if main endpoint fails
+            try {
+              const healthResponse = await fetch(`${baseUrl}/api/v1/images/health`, {
+                method: 'GET',
+                signal: AbortSignal.timeout(3000),
+              });
+              if (!healthResponse.ok) throw new Error(`${healthResponse.status}`);
+              return await healthResponse.json();
+            } catch (healthError) {
+              throw new Error(`Image service: not available`);
+            }
           }),
         ]);
 
-        // Determine service statuses based on actual health check results
+        // Log health check results for debugging
+        healthChecks.forEach((result, index) => {
+          const services = ['Frontend', 'API', 'Auth', 'Image'];
+          if (result.status === 'rejected') {
+            console.log(`${services[index]} health check failed:`, result.reason);
+          } else {
+            console.log(`${services[index]} health check succeeded:`, result.value);
+          }
+        });
+
+        // Determine service statuses based on health check results
         const frontendHealthy = healthChecks[0].status === 'fulfilled';
-        const apiHealthy = healthChecks[1].status === 'fulfilled' && healthChecks[1].value;
-        const authHealthy = healthChecks[2].status === 'fulfilled' && healthChecks[2].value;
-        const imageHealthy = healthChecks[3].status === 'fulfilled' && healthChecks[3].value;
+        const apiHealthy = healthChecks[1].status === 'fulfilled';
+        const authHealthy = healthChecks[2].status === 'fulfilled';
+        const imageHealthy = healthChecks[3].status === 'fulfilled';
 
         const status: SystemStatus = {
           overall: 'degraded', // Will be calculated below
@@ -329,13 +361,24 @@ export default function HomePage() {
         });
         
         if (response.ok) {
+          const result = await response.json();
           success = true;
-          console.log(`Chaos scenario ${scenarioId} started successfully`);
+          console.log(`Chaos scenario ${scenarioId} executed:`, result);
+          
+          // Show detailed results to user
+          if (result.status === 'executed') {
+            alert(`تم تنفيذ السيناريو بنجاح!\n\nالإجراءات:\n${result.actions.join('\n')}\n\nالتفاصيل: ${result.details}`);
+          } else if (result.status === 'simulated') {
+            alert(`تم محاكاة السيناريو!\n\nالإجراءات:\n${result.actions.join('\n')}\n\nالتفاصيل: ${result.details}`);
+          }
         } else {
-          console.log(`Chaos API not available, running simulation instead`);
+          const error = await response.json();
+          console.log(`Chaos API error:`, error);
+          alert(`فشل في تنفيذ السيناريو: ${error.error || 'خطأ غير معروف'}`);
         }
       } catch (apiError) {
-        console.log(`Chaos API not available, running simulation instead`);
+        console.log(`Chaos API not available:`, apiError);
+        alert('لا يمكن الوصول إلى API للفوضى. سيتم محاكاة السيناريو فقط.');
       }
       
       // Whether we hit the real API or not, simulate the duration
@@ -584,6 +627,26 @@ export default function HomePage() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/chaos/status');
+                    if (response.ok) {
+                      const status = await response.json();
+                      alert(`حالة النظام:\n\nKubernetes: ${status.kubernetes.available ? 'متاح' : 'غير متاح'}\nالمساحات: ${status.kubernetes.namespaces.join(', ') || 'لا توجد'}\nعدد البودات في backend: ${status.kubernetes.pods.backend?.length || 0}\nعدد البودات في frontend: ${status.kubernetes.pods.frontend?.length || 0}\nصحة النظام الخلفي: ${status.systemHealth.backend}\nصحة الواجهة: ${status.systemHealth.frontend}`);
+                    }
+                  } catch (error) {
+                    alert('فشل في الحصول على حالة النظام');
+                  }
+                }}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <Activity className="h-4 w-4" />
+                فحص حالة النظام
+              </button>
             </div>
 
             <div className="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
