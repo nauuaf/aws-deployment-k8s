@@ -4,7 +4,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://auth-service.backend.svc.cluster.local:8080';
-    const loginUrl = `${backendUrl}/auth/login`;
+    const loginUrl = `${backendUrl}/login`;
     
     try {
       const response = await fetch(loginUrl, {

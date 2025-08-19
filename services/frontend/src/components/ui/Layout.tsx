@@ -187,7 +187,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <UserIcon className="h-4 w-4" />
-                    <span>مرحباً، {userData?.name || 'مستخدم'}</span>
+                    <span>مرحباً، {userData?.firstName || userData?.name || 'مستخدم'}</span>
                   </div>
                   <button
                     onClick={handleLogout}
@@ -294,7 +294,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-gray-600 px-3 py-2">
                       <UserIcon className="h-4 w-4" />
-                      <span>مرحباً، {userData?.name || 'مستخدم'}</span>
+                      <span>مرحباً، {userData?.firstName || userData?.name || 'مستخدم'}</span>
                     </div>
                     <button
                       onClick={() => {

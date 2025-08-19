@@ -98,6 +98,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting image service")
     await init_db()
     
+    # Initialize image service database pool
+    global image_service
+    await image_service.init_db_pool()
+    
     yield
     
     # Shutdown
@@ -246,16 +250,20 @@ async def upload_images(
     authorization: Optional[str] = Header(None)
 ):
     """Upload one or more images"""
-    # Try to get user from auth header, but allow fallback for demo
-    current_user = {"id": "demo-user"}
-    if authorization and authorization.startswith("Bearer "):
-        try:
-            token = authorization.split(" ")[1]
-            current_user = await auth_service.verify_token(token)
-            if not current_user:
-                current_user = {"id": "demo-user"}
-        except:
-            pass  # Use demo user on auth failure
+    # Require authentication for uploads
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authentication required for image upload")
+    
+    try:
+        token = authorization.split(" ")[1]
+        current_user = await auth_service.verify_token(token)
+        if not current_user or not current_user.get("id"):
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Auth verification failed", error=str(e))
+        raise HTTPException(status_code=401, detail="Authentication failed")
     
     if len(images) > 5:
         raise HTTPException(status_code=400, detail="Maximum 5 images allowed per upload")
@@ -314,16 +322,18 @@ async def get_images(
     authorization: Optional[str] = Header(None)
 ):
     """Get user's images with pagination"""
-    # Try to get user from auth header, but allow fallback for demo
+    # Try to authenticate, but allow demo access for backward compatibility
     current_user = {"id": "demo-user"}
+    
     if authorization and authorization.startswith("Bearer "):
         try:
             token = authorization.split(" ")[1]
-            current_user = await auth_service.verify_token(token)
-            if not current_user:
-                current_user = {"id": "demo-user"}
-        except:
-            current_user = {"id": "demo-user"}
+            verified_user = await auth_service.verify_token(token)
+            if verified_user and verified_user.get("id"):
+                current_user = verified_user
+        except Exception as e:
+            logger.error("Auth verification failed, using demo user", error=str(e))
+            # Fall back to demo user
     if limit > 50:
         raise HTTPException(status_code=400, detail="Maximum limit is 50")
     
@@ -355,6 +365,28 @@ async def get_image(
     except Exception as e:
         logger.error("Failed to retrieve image", error=str(e), image_id=image_id)
         raise HTTPException(status_code=500, detail="Failed to retrieve image")
+
+@app.get("/images/{image_id}/view")
+async def view_image(image_id: str):
+    """Public endpoint to view image (no auth required)"""
+    from fastapi.responses import Response
+    try:
+        # Get image metadata from storage (check if image exists)
+        image = await image_service.get_image_by_id_public(image_id)
+        if not image:
+            raise HTTPException(status_code=404, detail="Image not found")
+        
+        # For now, return a simple response since we're using mock storage
+        # In production, this would return the actual image binary data from S3
+        return Response(
+            content=f"Image {image_id} would be displayed here",
+            media_type="text/plain"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to view image", error=str(e), image_id=image_id)
+        raise HTTPException(status_code=500, detail="Failed to view image")
 
 @app.delete("/images/{image_id}")
 async def delete_image(

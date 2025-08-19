@@ -16,14 +16,13 @@ import {
   CloudUpload,
   User,
   Shield,
-  Settings,
   ArrowRight,
   Eye,
   EyeOff,
   RefreshCw,
   Download,
-  Zap,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Zap
 } from 'lucide-react';
 
 interface APIEndpoint {
@@ -109,7 +108,7 @@ export default function APIPlaygroundPage() {
       id: 'auth-health',
       name: 'فحص حالة المصادقة',
       method: 'GET',
-      url: '/api/v1/auth/health',
+      url: '/api/auth/health',
       description: 'فحص حالة خدمة المصادقة',
       service: 'auth',
       requiresAuth: false,
@@ -119,7 +118,7 @@ export default function APIPlaygroundPage() {
       id: 'image-health',
       name: 'فحص حالة خدمة الصور',
       method: 'GET',
-      url: '/api/v1/images/health',
+      url: '/api/images/health',
       description: 'فحص حالة خدمة معالجة الصور',
       service: 'image',
       requiresAuth: false,
@@ -148,7 +147,7 @@ export default function APIPlaygroundPage() {
       icon: User,
     },
     
-    // Auth Service Endpoints (via API Gateway)
+    // Auth Service Endpoints
     {
       id: 'auth-register',
       name: 'تسجيل حساب جديد',
@@ -181,7 +180,7 @@ export default function APIPlaygroundPage() {
       },
     },
 
-    // Image Service Endpoints (via API Gateway)
+    // Image Service Endpoints
     {
       id: 'image-upload',
       name: 'رفع صورة',
@@ -197,12 +196,13 @@ export default function APIPlaygroundPage() {
       id: 'image-list',
       name: 'قائمة الصور',
       method: 'GET',
-      url: '/api/images',
-      description: 'الحصول على قائمة بالصور المرفوعة',
+      url: '/api/v1/images/images',
+      description: 'الحصول على قائمة بالصور المرفوعة من S3',
       service: 'image',
-      requiresAuth: true,
+      requiresAuth: false,
       icon: Database,
     },
+
   ];
 
   const getServiceUrl = (service: string) => {
@@ -531,7 +531,7 @@ export default function APIPlaygroundPage() {
                   {/* URL */}
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">URL</label>
-                    <div className="bg-gray-50 rounded-lg p-3 font-mono text-sm text-gray-800 flex items-center justify-between text-left" dir="ltr">
+                    <div className="bg-gray-50 rounded-lg p-3 font-mono text-sm text-gray-800 flex items-center justify-between force-ltr" dir="ltr">
                       <span dir="ltr">{getServiceUrl(selectedEndpoint.service)}{selectedEndpoint.url}</span>
                       <button
                         onClick={() => copyToClipboard(`${getServiceUrl(selectedEndpoint.service)}${selectedEndpoint.url}`)}
@@ -549,7 +549,8 @@ export default function APIPlaygroundPage() {
                       <textarea
                         value={requestBody}
                         onChange={(e) => setRequestBody(e.target.value)}
-                        className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saudi-green focus:border-transparent font-mono text-sm text-gray-900 placeholder-gray-500 text-left" dir="ltr"
+                        className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saudi-green focus:border-transparent font-mono text-sm text-gray-900 placeholder-gray-500 force-ltr"
+                        dir="ltr"
                         placeholder='{"key": "value"}'
                       />
                     </div>
@@ -649,8 +650,8 @@ export default function APIPlaygroundPage() {
                         {/* Response Data */}
                         <div>
                           <h3 className="text-sm font-medium text-gray-700 mb-2">محتوى الاستجابة</h3>
-                          <div className="bg-gray-50 rounded-lg p-4" dir="ltr">
-                            <pre className="text-sm text-gray-800 font-mono overflow-x-auto whitespace-pre-wrap text-left">
+                          <div className="bg-gray-50 rounded-lg p-4 force-ltr" dir="ltr">
+                            <pre className="text-sm text-gray-800 font-mono overflow-x-auto whitespace-pre-wrap">
                               {typeof testResult.data === 'object' 
                                 ? JSON.stringify(testResult.data, null, 2)
                                 : testResult.data
@@ -662,8 +663,8 @@ export default function APIPlaygroundPage() {
                         {/* Response Headers */}
                         <div>
                           <h3 className="text-sm font-medium text-gray-700 mb-2">رؤوس الاستجابة</h3>
-                          <div className="bg-gray-50 rounded-lg p-4" dir="ltr">
-                            <div className="space-y-1 text-sm font-mono text-left">
+                          <div className="bg-gray-50 rounded-lg p-4 force-ltr" dir="ltr">
+                            <div className="space-y-1 text-sm font-mono">
                               {Object.entries(testResult.headers).map(([key, value]) => (
                                 <div key={key} className="text-left">
                                   <span className="text-gray-600">{key}:</span> <span className="text-gray-800">{value}</span>

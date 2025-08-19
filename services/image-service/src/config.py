@@ -11,7 +11,7 @@ class Settings(BaseModel):
     
     # AWS settings
     aws_region: str = os.getenv('AWS_REGION', 'eu-central-1')
-    s3_bucket: str = os.getenv('S3_BUCKET', 'sre-assignment-poc-images')
+    s3_bucket: str = os.getenv('S3_BUCKET_NAME', 'sre-assignment-poc-images')
     
     # Database settings (for metadata if needed)
     db_host: str = None

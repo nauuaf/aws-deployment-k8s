@@ -7,8 +7,8 @@ const imageServiceHost = process.env.IMAGE_SERVICE_URL?.replace('http://', '') |
 
 // Raw proxy that streams the request directly
 router.use('*', (req, res) => {
-  // Remove /api/images from the path
-  const targetPath = req.originalUrl.replace('/api/images', '');
+  // Remove /api/images and /api/v1/images from the path
+  let targetPath = req.originalUrl.replace('/api/images', '').replace('/api/v1/images', '');
   
   console.log(`Proxying ${req.method} ${req.originalUrl} -> http://${imageServiceHost}${targetPath}`);
   

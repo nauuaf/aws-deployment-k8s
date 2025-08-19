@@ -234,4 +234,10 @@ resource "aws_db_subnet_group" "main" {
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-db-subnet-group"
   })
+
+  lifecycle {
+    ignore_changes = [
+      name,
+    ]
+  }
 }

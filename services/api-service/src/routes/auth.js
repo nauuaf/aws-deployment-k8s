@@ -448,6 +448,52 @@ router.post('/verify', [
 
 /**
  * @swagger
+ * /api/auth/health:
+ *   get:
+ *     summary: Auth service health check
+ *     description: Check if the auth service is healthy and accessible
+ *     tags: [Authentication, Health]
+ *     responses:
+ *       200:
+ *         description: Auth service is healthy
+ *       503:
+ *         description: Auth service is unavailable
+ */
+router.get('/health', asyncHandler(async (req, res) => {
+  try {
+    const response = await axios.get(`${authServiceUrl}/health`, {
+      timeout: 5000,
+      validateStatus: () => true // Accept any status code
+    });
+
+    if (response.status < 400) {
+      res.status(StatusCodes.OK).json({
+        status: 'healthy',
+        service: 'auth-service',
+        timestamp: new Date().toISOString(),
+        details: response.data
+      });
+    } else {
+      res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
+        status: 'unhealthy',
+        service: 'auth-service',
+        timestamp: new Date().toISOString(),
+        error: 'Auth service returned non-2xx status',
+        statusCode: response.status
+      });
+    }
+  } catch (error) {
+    res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
+      status: 'unhealthy',
+      service: 'auth-service',
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
+}));
+
+/**
+ * @swagger
  * /api/auth/forgot-password:
  *   post:
  *     summary: Request password reset

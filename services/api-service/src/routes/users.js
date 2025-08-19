@@ -14,6 +14,7 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'sredb',
   user: process.env.DB_USER || 'sreuser',
   password: process.env.DB_PASSWORD || 'password',
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 /**
@@ -38,7 +39,13 @@ const pool = new Pool({
  *         description: Internal server error
  */
 router.get('/profile', asyncHandler(async (req, res) => {
-  const client = await pool.connect();
+  let client;
+  try {
+    client = await pool.connect();
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    throw new Error('Database connection failed');
+  }
   
   try {
     const result = await client.query(

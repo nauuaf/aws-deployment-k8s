@@ -41,7 +41,7 @@ export default function GettingStartedPage() {
     },
     {
       title: 'kubectl',
-      description: 'للتفاعل مع Kubernetes',
+      description: 'للتفاعل مع Kubernetes (يتضمن kustomize)',
       command: 'kubectl version --client',
       icon: Settings,
     },
@@ -49,6 +49,18 @@ export default function GettingStartedPage() {
       title: 'Terraform',
       description: 'لإدارة البنية التحتية',
       command: 'terraform --version',
+      icon: Terminal,
+    },
+    {
+      title: 'Helm',
+      description: 'لإدارة حزم Kubernetes (المراقبة والـ Ingress)',
+      command: 'helm version',
+      icon: Settings,
+    },
+    {
+      title: 'jq',
+      description: 'لمعالجة JSON في السكريبتات',
+      command: 'jq --version',
       icon: Terminal,
     },
   ];
@@ -70,25 +82,25 @@ export default function GettingStartedPage() {
       step: 3,
       title: 'إنشاء البنية التحتية',
       command: './scripts/clean-deploy.sh',
-      description: 'النشر الكامل للبنية التحتية والخدمات (نهج موصى به)',
+      description: 'ينشئ VPC, EKS, RDS, S3 ويعطل cert-manager تلقائياً - اختر "y" عند السؤال',
     },
     {
       step: 4,
-      title: 'نشر التطبيقات (اختياري)',
+      title: 'نشر التطبيقات والخدمات',
       command: './scripts/deploy.sh',
-      description: 'إذا كنت تريد نشر التطبيقات فقط بدون البنية التحتية',
+      description: 'بناء Docker images ونشر الخدمات وتثبيت NGINX Ingress Controller',
     },
     {
       step: 5,
       title: 'التحقق من النشر',
-      command: './scripts/verify-deployment.sh',
-      description: 'التأكد من عمل جميع الخدمات',
+      command: 'kubectl get pods -A\nkubectl get svc -n ingress-nginx',
+      description: 'التأكد من عمل جميع الخدمات والحصول على Load Balancer URL',
     },
     {
       step: 6,
-      title: 'الحصول على معلومات النشر',
-      command: './scripts/get-deployment-info.sh',
-      description: 'عرض جميع روابط التطبيق وبيانات الوصول والمراقبة',
+      title: '(اختياري) تفعيل cert-manager لإدارة شهادات TLS',
+      command: './scripts/toggle-cert-manager.sh enable\ncd terraform/environments/poc\nterraform plan\nterraform apply',
+      description: 'تفعيل cert-manager للحصول على شهادات TLS تلقائية من Let\'s Encrypt أو إنشاء شهادات موقعة ذاتياً',
     },
   ];
 
@@ -173,22 +185,51 @@ export default function GettingStartedPage() {
               </div>
             ))}
           </div>
+          
+          {/* Platform Note */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+            <div className="flex items-start gap-3">
+              <Terminal className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div>
+                <h4 className="font-semibold text-blue-800 mb-2">ملاحظة المنصة</h4>
+                <p className="text-blue-700 text-sm mb-2">
+                  تم اختبار هذا المشروع بنجاح على <strong>macOS</strong>. قد تحتاج لتعديل الأوامر لأنظمة أخرى:
+                </p>
+                <div className="text-blue-700 text-sm space-y-1">
+                  <div><strong>macOS:</strong> <code className="bg-blue-100 px-1 rounded">brew install helm jq</code></div>
+                  <div><strong>Ubuntu/Debian:</strong> <code className="bg-blue-100 px-1 rounded">apt-get install helm jq</code></div>
+                  <div><strong>CentOS/RHEL:</strong> <code className="bg-blue-100 px-1 rounded">yum install helm jq</code></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Recommended Approach */}
         <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-          <h3 className="text-lg font-semibold text-green-800 mb-4">النهج الموصى به</h3>
-          <p className="text-green-700 mb-4">
-            استخدم <code className="bg-green-100 px-2 py-1 rounded text-green-800" dir="ltr">clean-deploy.sh</code> للنشر الكامل في خطوة واحدة. 
-            هذا السكريبت يتضمن جميع الخطوات المطلوبة:
+          <h3 className="text-lg font-semibold text-green-800 mb-4">✅ النهج الموصى به - بسيط وفعال</h3>
+          <p className="text-green-700 mb-4 font-semibold">
+            اتبع هذه الخطوات البسيطة بالترتيب:
           </p>
-          <ul className="text-green-700 space-y-1 text-sm">
-            <li>• إنشاء البنية التحتية (Terraform)</li>
-            <li>• بناء ورفع صور Docker</li>
-            <li>• نشر جميع الخدمات</li>
-            <li>• تشغيل أدوات المراقبة</li>
-            <li>• التحقق من حالة النشر</li>
+          <ul className="text-green-700 space-y-2 text-sm">
+            <li className="flex items-start gap-2">
+              <span className="text-green-800 font-bold">1.</span>
+              <span><strong>clean-deploy.sh أولاً</strong> - ينشئ البنية التحتية كاملة (VPC, EKS, RDS, S3) ويعطل cert-manager تلقائياً</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-green-800 font-bold">2.</span>
+              <span><strong>deploy.sh ثانياً</strong> - يبني Docker images وينشر جميع الخدمات ويثبت Load Balancer</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-green-800 font-bold">3.</span>
+              <span><strong>انتظر اكتمال كل خطوة</strong> - لا تقاطع العملية أو تبدأ خطوة جديدة قبل انتهاء السابقة</span>
+            </li>
           </ul>
+          <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 mt-4">
+            <p className="text-blue-800 text-sm">
+              <strong>ملاحظة:</strong> السكريبت clean-deploy.sh يتولى تعطيل cert-manager تلقائياً، لذا لا حاجة لتعطيله يدوياً
+            </p>
+          </div>
         </div>
 
         {/* Quick Start Steps */}
@@ -411,19 +452,22 @@ export default function GettingStartedPage() {
 
         {/* Time Estimate */}
         <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-          <h3 className="text-lg font-semibold text-green-800 mb-4">تقدير الوقت</h3>
+          <h3 className="text-lg font-semibold text-green-800 mb-4">تقدير الوقت الإجمالي</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="font-medium text-green-800">الإعداد الأولي:</p>
-              <p className="text-green-700">10-15 دقيقة</p>
-            </div>
-            <div>
-              <p className="font-medium text-green-800">نشر البنية التحتية:</p>
+              <p className="font-medium text-green-800">clean-deploy.sh:</p>
               <p className="text-green-700">15-20 دقيقة</p>
+              <p className="text-xs text-green-600 mt-1">البنية التحتية (EKS, VPC, RDS)</p>
             </div>
             <div>
-              <p className="font-medium text-green-800">نشر التطبيقات:</p>
-              <p className="text-green-700">5-10 دقائق</p>
+              <p className="font-medium text-green-800">deploy.sh:</p>
+              <p className="text-green-700">10-15 دقيقة</p>
+              <p className="text-xs text-green-600 mt-1">Docker images + الخدمات + Load Balancer</p>
+            </div>
+            <div>
+              <p className="font-medium text-green-800">المجموع:</p>
+              <p className="text-green-700 font-bold">25-35 دقيقة</p>
+              <p className="text-xs text-green-600 mt-1">للنشر الكامل من الصفر</p>
             </div>
           </div>
         </div>

@@ -76,7 +76,7 @@ export default function RegisterPage() {
     }
 
     try {
-      const response = await fetch('/api/v1/auth/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Field */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-900 mb-2">
                 الاسم الكامل
               </label>
               <div className="relative">
@@ -137,7 +137,7 @@ export default function RegisterPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saudi-green focus:border-transparent transition-colors ps-12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saudi-green focus:border-transparent transition-colors ps-12 text-gray-900"
                   placeholder="أدخل اسمك الكامل"
                 />
                 <User className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
@@ -146,7 +146,7 @@ export default function RegisterPage() {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-2">
                 البريد الإلكتروني
               </label>
               <div className="relative">
@@ -157,7 +157,7 @@ export default function RegisterPage() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saudi-green focus:border-transparent transition-colors ps-12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saudi-green focus:border-transparent transition-colors ps-12 text-gray-900"
                   placeholder="أدخل بريدك الإلكتروني"
                 />
                 <Mail className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
@@ -166,7 +166,7 @@ export default function RegisterPage() {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-900 mb-2">
                 كلمة المرور
               </label>
               <div className="relative">
@@ -177,7 +177,7 @@ export default function RegisterPage() {
                   required
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saudi-green focus:border-transparent transition-colors ps-12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saudi-green focus:border-transparent transition-colors ps-12 pe-12 text-gray-900"
                   placeholder="أدخل كلمة المرور"
                 />
                 <Lock className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
@@ -194,7 +194,7 @@ export default function RegisterPage() {
 
             {/* Confirm Password Field */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-900 mb-2">
                 تأكيد كلمة المرور
               </label>
               <div className="relative">
@@ -205,7 +205,7 @@ export default function RegisterPage() {
                   required
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saudi-green focus:border-transparent transition-colors ps-12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saudi-green focus:border-transparent transition-colors ps-12 pe-12 text-gray-900"
                   placeholder="أعد إدخال كلمة المرور"
                 />
                 <Lock className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />

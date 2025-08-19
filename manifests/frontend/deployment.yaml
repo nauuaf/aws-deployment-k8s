@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: 503561446285.dkr.ecr.eu-central-1.amazonaws.com/sre-task/frontend:v24
+        image: 503561446285.dkr.ecr.eu-central-1.amazonaws.com/sre-task/frontend:v1
         ports:
         - containerPort: 3000
           name: http

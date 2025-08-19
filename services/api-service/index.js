@@ -213,6 +213,12 @@ app.use('/api/users', authMiddleware, userRoutes);
 app.use('/api/images', imageRoutes); // Let image service handle auth
 app.use('/api/chaos', authMiddleware, chaosRoutes);
 
+// v1 API routes (proxy to existing routes)
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', authMiddleware, userRoutes);
+app.use('/api/v1/images', imageRoutes); // Let image service handle auth
+app.use('/api/v1/chaos', authMiddleware, chaosRoutes);
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
@@ -227,7 +233,11 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       users: '/api/users',
       images: '/api/images',
-      chaos: '/api/chaos'
+      chaos: '/api/chaos',
+      'v1-auth': '/api/v1/auth',
+      'v1-users': '/api/v1/users',
+      'v1-images': '/api/v1/images',
+      'v1-chaos': '/api/v1/chaos'
     }
   });
 });

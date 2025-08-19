@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: auth-service
-        image: 503561446285.dkr.ecr.eu-central-1.amazonaws.com/sre-task/auth-service:v24
+        image: 503561446285.dkr.ecr.eu-central-1.amazonaws.com/sre-task/auth-service:v1
         ports:
         - containerPort: 8080
           name: http

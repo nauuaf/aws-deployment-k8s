@@ -27,9 +27,9 @@ class AuthService:
             # For development/demo, return a mock user when auth service is unavailable
             import os
             if os.getenv('ENVIRONMENT', 'production').lower() in ['development', 'poc', 'demo']:
-                print("Using mock user for development")
+                print("Using demo user for development")
                 return {
-                    "id": "mock-user-id",
+                    "id": "demo-user",
                     "email": "demo@example.com",
                     "firstName": "Demo",
                     "lastName": "User",

@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: api-service
-        image: 503561446285.dkr.ecr.eu-central-1.amazonaws.com/sre-task/api-service:v24
+        image: 503561446285.dkr.ecr.eu-central-1.amazonaws.com/sre-task/api-service:v1
         ports:
         - containerPort: 3000
           name: http
@@ -35,11 +35,37 @@ spec:
           value: "3000"
         - name: LOG_LEVEL
           value: "info"
+        # Database connection with SSL support
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
               name: database-secret
               key: DATABASE_URL
+        - name: DB_HOST
+          value: "sre-task-poc-db.c5y84uk6mycf.eu-central-1.rds.amazonaws.com"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_DB
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        # SSL Configuration for PostgreSQL
+        - name: PGSSLMODE
+          value: "require"
+        - name: NODE_TLS_REJECT_UNAUTHORIZED
+          value: "0"
+        # Application secrets
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:

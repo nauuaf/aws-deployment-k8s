@@ -23,7 +23,7 @@ spec:
     replicationcontrollers: "5"
     services: "10"
     secrets: "20"
-    configmaps: "10"
+    configmaps: "50"
     
     # Extended Resources
     count/deployments.apps: "10"

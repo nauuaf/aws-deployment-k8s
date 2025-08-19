@@ -75,6 +75,12 @@
     direction: ltr;
     text-align: left;
   }
+  
+  /* Force LTR for JSON/code content */
+  .force-ltr, .force-ltr * {
+    direction: ltr !important;
+    text-align: left !important;
+  }
 }
 
 :root {

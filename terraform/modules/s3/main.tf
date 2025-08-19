@@ -42,9 +42,27 @@ variable "restrict_public_buckets" {
 }
 
 variable "lifecycle_rules" {
-  description = "Lifecycle rules"
-  type        = any
-  default     = []
+  description = "Lifecycle rules for S3 bucket"
+  type = list(object({
+    id     = string
+    status = string
+    prefix = optional(string, "")
+    expiration = optional(object({
+      days = number
+    }), null)
+    noncurrent_version_expiration = optional(object({
+      days = number
+    }), null)
+  }))
+  default = []
+  
+  validation {
+    condition = alltrue([
+      for rule in var.lifecycle_rules : 
+      contains(["Enabled", "Disabled"], rule.status)
+    ])
+    error_message = "Lifecycle rule status must be either 'Enabled' or 'Disabled'."
+  }
 }
 
 variable "tags" {
@@ -53,12 +71,34 @@ variable "tags" {
   default     = {}
 }
 
-# S3 Bucket
+variable "force_destroy" {
+  description = "Allow bucket to be destroyed even if it contains objects"
+  type        = bool
+  default     = true
+}
+
+variable "create_new_bucket" {
+  description = "Create a new bucket with random suffix if original name exists"
+  type        = bool
+  default     = false
+}
+
+# Random suffix for bucket name if needed
+resource "random_string" "bucket_suffix" {
+  count   = var.create_new_bucket ? 1 : 0
+  length  = 8
+  special = false
+  upper   = false
+}
+
+# S3 Bucket - handle existing bucket scenario
 resource "aws_s3_bucket" "main" {
-  bucket = var.bucket_name
+  bucket = var.create_new_bucket ? "${var.bucket_name}-${random_string.bucket_suffix[0].result}" : var.bucket_name
+  force_destroy = var.force_destroy
 
   tags = merge(var.tags, {
-    Name = var.bucket_name
+    Name = var.create_new_bucket ? "${var.bucket_name}-${random_string.bucket_suffix[0].result}" : var.bucket_name
+    OriginalName = var.bucket_name
   })
 }
 
@@ -90,4 +130,36 @@ resource "aws_s3_bucket_public_access_block" "main" {
   block_public_policy     = var.block_public_policy
   ignore_public_acls      = var.ignore_public_acls
   restrict_public_buckets = var.restrict_public_buckets
+}
+
+# S3 Bucket Lifecycle Configuration
+resource "aws_s3_bucket_lifecycle_configuration" "main" {
+  count  = length(var.lifecycle_rules) > 0 ? 1 : 0
+  bucket = aws_s3_bucket.main.id
+
+  dynamic "rule" {
+    for_each = var.lifecycle_rules
+    content {
+      id     = rule.value.id
+      status = rule.value.status
+
+      filter {
+        prefix = lookup(rule.value, "prefix", "")
+      }
+
+      dynamic "expiration" {
+        for_each = lookup(rule.value, "expiration", null) != null ? [rule.value.expiration] : []
+        content {
+          days = expiration.value.days
+        }
+      }
+
+      dynamic "noncurrent_version_expiration" {
+        for_each = lookup(rule.value, "noncurrent_version_expiration", null) != null ? [rule.value.noncurrent_version_expiration] : []
+        content {
+          noncurrent_days = noncurrent_version_expiration.value.days
+        }
+      }
+    }
+  }
 }

@@ -82,6 +82,12 @@ variable "tags" {
   default     = {}
 }
 
+variable "manage_aws_auth_configmap" {
+  description = "Whether to manage aws-auth ConfigMap"
+  type        = bool
+  default     = true
+}
+
 variable "cloudwatch_log_retention_days" {
   description = "Number of days to retain log events in CloudWatch logs"
   type        = number
@@ -91,7 +97,7 @@ variable "cloudwatch_log_retention_days" {
 # Use the official AWS EKS Terraform module - compatible with AWS Provider 5.x
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 19.0"
+  version = "~> 20.0"
 
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
@@ -167,6 +173,12 @@ resource "aws_iam_role" "node_group" {
   })
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [
+      name,
+    ]
+  }
 }
 
 resource "aws_iam_instance_profile" "node_group" {
@@ -273,6 +285,12 @@ data "aws_caller_identity" "current" {}
 resource "aws_kms_alias" "eks" {
   name          = "alias/${var.cluster_name}-eks"
   target_key_id = aws_kms_key.eks.key_id
+
+  lifecycle {
+    ignore_changes = [
+      name,
+    ]
+  }
 }
 
 # IAM role for EBS CSI Driver
@@ -307,3 +325,7 @@ resource "aws_iam_role_policy_attachment" "ebs_csi_driver" {
 # Note: EKS module v17 handles all necessary security group rules internally
 # Custom security group rules should be added to worker_groups_defaults or via variables
 # rather than as separate resources to avoid conflicts
+
+# Note: aws-auth ConfigMap is automatically managed by the EKS module
+# when using managed node groups. Manual configuration may be needed
+# for self-managed node groups or specific access requirements.

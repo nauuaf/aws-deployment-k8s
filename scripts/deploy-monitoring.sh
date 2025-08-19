@@ -94,12 +94,30 @@ handle_quota_conflicts() {
     
     # Check if monitoring quota is blocking Helm operations
     if kubectl get resourcequota monitoring-quota -n monitoring >/dev/null 2>&1; then
+        # Check configmap quota
+        local quota_configmaps=$(kubectl get resourcequota monitoring-quota -n monitoring -o jsonpath='{.status.hard.configmaps}' 2>/dev/null || echo "0")
+        local used_configmaps=$(kubectl get resourcequota monitoring-quota -n monitoring -o jsonpath='{.status.used.configmaps}' 2>/dev/null || echo "0")
+        
+        if [ "$used_configmaps" = "$quota_configmaps" ] && [ "$quota_configmaps" != "0" ]; then
+            log_warning "ConfigMap quota limit reached ($used_configmaps/$quota_configmaps), updating quota..."
+            
+            # Update the configmap quota to allow kube-prometheus-stack installation
+            kubectl patch resourcequota monitoring-quota -n monitoring --type='json' \
+                -p='[{"op": "replace", "path": "/spec/hard/configmaps", "value": "50"}]' >/dev/null 2>&1 || true
+            
+            # Wait a moment for quota update to take effect
+            sleep 2
+            
+            log_success "ConfigMap quota updated to 50 to accommodate monitoring stack"
+            return 0  # Quota was adjusted
+        fi
+        
         # Check if quota is preventing job creation
         local quota_jobs=$(kubectl get resourcequota monitoring-quota -n monitoring -o jsonpath='{.status.hard.count/jobs\.batch}' 2>/dev/null || echo "0")
         local used_jobs=$(kubectl get resourcequota monitoring-quota -n monitoring -o jsonpath='{.status.used.count/jobs\.batch}' 2>/dev/null || echo "0")
         
         if [ "$used_jobs" = "$quota_jobs" ] && [ "$quota_jobs" != "0" ]; then
-            log_warning "Resource quota may block Helm operations, temporarily adjusting..."
+            log_warning "Job quota may block Helm operations, temporarily adjusting..."
             
             # Temporarily increase job quota for Helm operations
             kubectl patch resourcequota monitoring-quota -n monitoring --type='json' \
@@ -221,7 +239,8 @@ kubectl wait --for=condition=available --timeout=300s deployment/kube-prometheus
 
 # Apply our custom monitoring manifests
 log "Applying custom ServiceMonitors and PrometheusRules..."
-kubectl apply -f "$PROJECT_ROOT/manifests/monitoring/"
+kubectl apply -f "$PROJECT_ROOT/manifests/monitoring/prometheusrule.yaml"
+kubectl apply -f "$PROJECT_ROOT/manifests/monitoring/servicemonitor.yaml"
 
 # Wait for Prometheus to be ready
 log "Waiting for Prometheus to be ready..."

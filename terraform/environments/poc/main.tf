@@ -65,6 +65,7 @@ module "vpc" {
   azs                  = local.azs
   name_prefix          = local.name_prefix
   enable_nat_gateway   = var.enable_nat_gateway
+  single_nat_gateway   = true  # Use single NAT gateway to avoid EIP limits
   enable_dns_hostnames = true
   enable_dns_support   = true
 
@@ -159,6 +160,7 @@ module "s3" {
   
   versioning_enabled = var.s3_versioning_enabled
   encryption_enabled = true
+  create_new_bucket  = true  # Create new bucket with suffix if original exists
   
   block_public_acls       = true
   block_public_policy     = true
@@ -206,6 +208,21 @@ provider "kubernetes" {
   }
 }
 
+# IAM Roles Module for IRSA
+module "iam_roles" {
+  source = "../../modules/iam-roles"
+  
+  cluster_name           = local.name_prefix
+  cluster_oidc_issuer_url = module.eks.cluster_oidc_issuer_url
+  s3_bucket_arn         = module.s3.bucket_arn
+  namespace             = "backend"
+  service_account_name  = "backend-service-account"
+  
+  tags = var.tags
+  
+  depends_on = [module.eks, module.s3]
+}
+
 # Kubernetes Resources Module
 module "kubernetes" {
   source = "../../modules/kubernetes"
@@ -218,11 +235,14 @@ module "kubernetes" {
   # Additional variables for secrets
   s3_bucket_name = module.s3.bucket_id
   aws_region     = var.aws_region
-  db_endpoint    = module.rds.db_endpoint
+  db_endpoint    = split(":", module.rds.db_endpoint)[0]
   db_name        = module.rds.db_name
   db_username    = module.rds.db_username
   
-  depends_on = [module.eks]
+  # IAM role for service account
+  image_service_role_arn = module.iam_roles.image_service_role_arn
+  
+  depends_on = [module.eks, module.iam_roles]
 }
 
 # Network Policies Module
@@ -271,6 +291,12 @@ resource "aws_ecr_repository" "repositories" {
 
   encryption_configuration {
     encryption_type = "AES256"
+  }
+
+  lifecycle {
+    ignore_changes = [
+      name,
+    ]
   }
 
   tags = var.tags

@@ -18,13 +18,14 @@ spec:
         app: image-service
         component: backend
     spec:
+      serviceAccountName: backend-service-account
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
       containers:
       - name: image-service
-        image: 503561446285.dkr.ecr.eu-central-1.amazonaws.com/sre-task/image-service:v24
+        image: 503561446285.dkr.ecr.eu-central-1.amazonaws.com/sre-task/image-service:v1
         ports:
         - containerPort: 5000
           name: http
